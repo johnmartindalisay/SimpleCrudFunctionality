@@ -83,8 +83,15 @@ Route::post('postRequest',[
 
 
 
-Route::post('updateRequest',[
+Route::post('updateUserImage',[
 
-	'uses' => 'Registration@update_customer_details',
+	'uses' => 'Registration@update_user_image',
+
+]);
+
+
+Route::post('updateUserDetails',[
+
+	'uses' => 'Registration@update_user_details',
 
 ]);

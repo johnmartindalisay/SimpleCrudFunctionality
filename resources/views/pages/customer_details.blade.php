@@ -16,8 +16,10 @@
 		  		<!-- ******************* -->
 
 		  		<div class="image_container">
-		  			<?php $baseurl = "public/images/".$result->ImageName;?>
-		  			<img src="{{ asset($baseurl)}}" class="img_cls">
+		  			<?php 
+		  			$fullpathImage = "public/images/".$result->id."/".$result->ImageName;
+		  			//$baseurl = "public/images/".$result->ImageName;?>
+		  			<img src="{{ asset($fullpathImage)}}" class="img_cls">
 		  		</div>
 
 
@@ -119,14 +121,14 @@ window.onclick = function(event) {
     }
 }
 
-
+//User Image Update
 $("form#update-img-form").submit(function(e){
 	e.preventDefault();
 
 	$.ajax({
 
 		type: "POST",
-		url: "updateRequest",
+		url: "updateUserImage",
 		data : new FormData(this),
 		contentType:false,
 		processData: false,
@@ -138,7 +140,7 @@ $("form#update-img-form").submit(function(e){
 				alert("Updated Successfully");
 
 				$("#myModal").css("display","none");
-				$("img.img_cls").attr("src",data.contents.fullpath);
+				$("img.img_cls").attr("src",data.contents.existing_fileImage);
 
 			}else{
 				console.log("Error");
@@ -156,6 +158,8 @@ $("form#update-img-form").submit(function(e){
 });
 
 $("div.heading").last().css("border-bottom","none");
+
+//User Details Update
 function update_customer_details(id){
 
 	var customer_id = $('input#customer_id').val();
@@ -169,7 +173,7 @@ function update_customer_details(id){
 	$.ajax({
 
 		type: "POST",
-		url: "updateRequest",
+		url: "updateUserDetails",
 		data : dataString,
 		success: function(data){
 				//console.log(data);

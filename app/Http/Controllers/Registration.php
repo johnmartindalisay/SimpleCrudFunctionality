@@ -10,6 +10,8 @@ use DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\URL;
+use File;
+use Illuminate\Support\Facades\Storage;
 
 class Registration extends Controller
 {
@@ -93,8 +95,9 @@ class Registration extends Controller
 
 
         /******/ 
-        $destinationPath = "public/images/";
-        $basePath = $imageFile->move($destinationPath,$imageName);
+        //$destinationPath = "public/images/";
+        //$basePath = $imageFile->move($destinationPath,$imageName);
+
 
         //**
         //Passing view in JSON
@@ -115,23 +118,76 @@ class Registration extends Controller
                 'updated_at' => $current_time
             );
 
-        $result['content']['results'] = Register::insert($data);
+        $result = Register::insert($data);
 
-        return response()->json($result);
-        //return $result->toSql();
+        if ($result) {
+            
+            $user = Register::where('email_address',$data['email_address'])->first();
+
+            $path = public_path().'/images/'.$user->id;
+            File::makeDirectory($path);
+
+            $imageFile->move($path,$imageName);
+
+            $contents['content']['results'] = true;
+        }
+
+        return response()->json($contents);
     }
 
 
-    function update_customer_details(Request $request){
-        
+    function update_user_image(Request $request){
+    
+        $data = [];
+        $contents = [];
         $current_time =  date("Y-m-d H:i:s");
         $file = $request->file('img_file');
-        if (!isset($file)) {
+        $fileName = $file->getClientOriginalName();
+        $customer_id =  $request->input('customer_id');
+        $fileType = $file->getMimeType();
+        $field_name =  $request->input('customer_field');
+        $field_name_value =  $request->input('customer_field_value');
+
+        //fullpath of the user image - get the ImageName  of the existing user
+        $user = Register::where('id',$customer_id)->first();
+        $path = public_path().'/images/'.$customer_id."/".$user->ImageName;
+
+        //Delete the existing Image file 
+        
+        File::delete($path);
+        //then Update the database with the new existing Image FIle uploaded and move the file
+        $data = array(
+
+                'ImageName' => $fileName,
+                'ImageType' => $fileType,
+                'updated_at' => $current_time,
+
+        );
+
+        $update_result = Register::where('id',$customer_id)->update($data);
+        
+        $newPath = public_path().'/images/'.$customer_id;
+        $file->move($newPath,$fileName);
+        $new_user = Register::where('id',$customer_id)->first();
+
+        //$data['content']['path'] = $path;
+        //
+        $fullpathImage = "public/images/".$new_user->id."/".$new_user->ImageName;
+        $contents['contents']['existing_fileImage'] = $fullpathImage;
+        $contents['contents']['results'] = $update_result;
+
+        return response()->json($contents);
+    }
 
 
+    function update_user_details(Request $request){
+
+           // $contents = $request->all();
+            $current_time =  date("Y-m-d H:i:s");
             $field_name =  $request->input('customer_field');
             $customer_id =  $request->input('id');
             $field_name_value =  $request->input('customer_field_value');
+
 
             $update_result = DB::update("UPDATE `registers` SET `".$field_name."` = '".$field_name_value."' , `updated_at` = '".$current_time."' WHERE `id` = ".$customer_id);
 
@@ -139,46 +195,9 @@ class Registration extends Controller
                     
                     $data['contents']['new_value'] = $field_name_value;
                     $data['contents']['affected_rows'] = $update_result;
-             }else{
-
-                return false;
              }
-        
-        }else{
 
-            // /***************Image Data*****************************
-            $customer_id = $request->input('customer_id');
-            
-            $fileName = $file->getClientOriginalName();
-            $fileType = $file->getMimeType();
-            $data = array(
+            return response()->json($data);
 
-                'ImageName' => $fileName,
-                'ImageType' => $fileType,
-                'updated_at' => $current_time,
-
-            );
-
-            $destinationPath = "/public/images/";
-            $file->move($destinationPath,$fileName);
-            //$fullpath = base_path().$destinationPath.$fileName;
-            $fullpath = URL::to('/');
-
-            $update_result = Register::where('id',$customer_id)->update($data);
-            $data = [];
-            if ($update_result > 0) {
-                    //$data['contents'] = $update_result;
-                    
-                    $data['contents']['results'] = $update_result;
-                    $data['contents']['fullpath'] = $fullpath."/public/images/".$fileName;
-            }else{
-
-                return false;
-            }
-        }
-
-
-
-        return response()->json($data);
     }
 }
